@@ -19,16 +19,16 @@ function createHtmlResult(result, format, totalAmount, volumeCredits) {
     return "";
 }
 
-function getAmountData(plays, invoice) {
-    let amountData = [];
+function getTotalAmount(plays, invoice) {
+    let totalAmount = 0;
 
     for (let perf of invoice.performances) {
         const play = plays[perf.playID];
         let thisAmount = 0;
         thisAmount = calculateAmount(thisAmount, perf, play)
-        amountData.push({name: play.name, amount: thisAmount});
+        totalAmount += thisAmount;
     }
-    return amountData;
+    return totalAmount;
 }
 
 function getVolumeCredit(plays, invoice) {
@@ -41,26 +41,42 @@ function getVolumeCredit(plays, invoice) {
 }
 
 
-function getTotalAmount(amountData) {
-    return 0;
+function getStatementData(plays, invoice) {
+    let statementData = [];
+    for (let perf of invoice.performances) {
+        const play = plays[perf.playID];
+        let thisAmount = 0;
+        thisAmount = calculateAmount(thisAmount, perf, play)
+        statementData.push({name: play.name, amount: thisAmount, seats: perf.audience});
+    }
+    return statementData;
 }
 
-function statement(invoice, plays) {
-    let totalAmount = 0;
-    let volumeCredits = 0;
-    let amountData = [];
+function getTextResult(invoice, statementData, totalAmount, volumeCredits) {
     let result = `Statement for ${invoice.customer}\n`;
     const format = new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'USD',
         minimumFractionDigits: 2,
     }).format;
-
-    amountData = getAmountData(plays, invoice);
-    totalAmount = getTotalAmount(amountData);
-    volumeCredits = getVolumeCredit(plays, invoice);
+    for (let e of statementData) {
+        result += ` ${e.name}: ${format(e.amount / 100)} (${e.seats} seats)\n`;
+    }
     result += `Amount owed is ${format(totalAmount / 100)}\n`;
     result += `You earned ${volumeCredits} credits \n`;
+    return result;
+}
+
+function statement(invoice, plays) {
+    let totalAmount = 0;
+    let volumeCredits = 0;
+    let statementData = [];
+
+    totalAmount = getTotalAmount(plays, invoice);
+    volumeCredits = getVolumeCredit(plays, invoice);
+    statementData = getStatementData(plays, invoice)
+
+    let result = getTextResult(invoice, statementData, totalAmount, volumeCredits);
     return result;
 }
 
