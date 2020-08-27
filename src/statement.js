@@ -19,9 +19,36 @@ function createHtmlResult(result, format, totalAmount, volumeCredits) {
     return "";
 }
 
+function getAmountData(plays, invoice) {
+    let amountData = [];
+
+    for (let perf of invoice.performances) {
+        const play = plays[perf.playID];
+        let thisAmount = 0;
+        thisAmount = calculateAmount(thisAmount, perf, play)
+        amountData.push({name: play.name, amount: thisAmount});
+    }
+    return amountData;
+}
+
+function getVolumeCredit(plays, invoice) {
+    let volumeCredits = 0;
+    for (let perf of invoice.performances) {
+        const play = plays[perf.playID];
+        volumeCredits = calculateCredits(volumeCredits, perf, play);
+    }
+    return volumeCredits;
+}
+
+
+function getTotalAmount(amountData) {
+    return 0;
+}
+
 function statement(invoice, plays) {
     let totalAmount = 0;
     let volumeCredits = 0;
+    let amountData = [];
     let result = `Statement for ${invoice.customer}\n`;
     const format = new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -29,16 +56,9 @@ function statement(invoice, plays) {
         minimumFractionDigits: 2,
     }).format;
 
-    for (let perf of invoice.performances) {
-        const play = plays[perf.playID];
-        let thisAmount = 0;
-        thisAmount = calculateAmount(thisAmount, perf, play)
-        // add volume credits
-        volumeCredits = calculateCredits(volumeCredits, perf, play);
-        //print line for this order
-        result += ` ${play.name}: ${format(thisAmount / 100)} (${perf.audience} seats)\n`;
-        totalAmount += thisAmount;
-    }
+    amountData = getAmountData(plays, invoice);
+    totalAmount = getTotalAmount(amountData);
+    volumeCredits = getVolumeCredit(plays, invoice);
     result += `Amount owed is ${format(totalAmount / 100)}\n`;
     result += `You earned ${volumeCredits} credits \n`;
     return result;
